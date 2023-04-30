@@ -49,70 +49,58 @@ exports.publicProfile = (req, res) => {
 };
 
 exports.update = async (req, res) => {
-  const form = new formidable.IncomingForm();
-  form.keepExtension = true;
   try {
-    const { fields, files } = await new Promise((resolve, reject) => {
-      form.parse(req, (err, fields, files) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve({ fields, files });
+    const form = formidable({ keepExtensions: true });
+    form.parse(req, async (err, fields, files) => {
+      if (err) {
+        return res.status(400).json({
+          error: "Photo could not be uploaded",
+        });
+      }
+
+      let user = req.profile;
+      const existingRole = user.role;
+      const existingEmail = user.email;
+
+      if (fields && fields.username && fields.username.length > 12) {
+        return res.status(400).json({
+          error: "Username should be less than 12 characters long",
+        });
+      }
+
+      if (fields.username) {
+        fields.username = slugify(fields.username).toLowerCase();
+      }
+
+      if (fields.password && fields.password.length < 6) {
+        return res.status(400).json({
+          error: "Password should be min 6 characters long",
+        });
+      }
+
+      user = _.extend(user, fields);
+      user.role = existingRole;
+      user.email = existingEmail;
+
+      if (files.photo) {
+        if (files.photo.size > 10000000) {
+          return res.status(400).json({
+            error: "Image should be less than 1mb",
+          });
         }
-      });
+        user.photo.data = fs.readFileSync(files.photo.path);
+        user.photo.contentType = files.photo.type;
+      }
+
+      const result = await user.save();
+      result.hashed_password = undefined;
+      result.salt = undefined;
+      result.photo = undefined;
+      res.json(result);
     });
-
-    console.log("Parsed fields:", fields);
-    console.log("Parsed files:", files);
-
-    let user = req.profile;
-    // user's existing role and email before update
-    let existingRole = user.role;
-    let existingEmail = user.email;
-    if (fields && fields.username && fields.username.length > 12) {
-      return res.status(400).json({
-        error: "Username should be less than 12 characters long",
-      });
-    }
-    if (fields.username) {
-      fields.username = slugify(fields.username).toLowerCase();
-    }
-
-    let updatedFields = { ...fields };
-
-    if (fields.password && fields.password.length > 0) {
-      if (fields.password.length < 6) {
-        return res.status(400).json({
-          error: "Password should be mininum 6 characters long",
-        });
-      }
-    } else {
-      delete updatedFields.password;
-    }
-
-    user = _.extend(user, updatedFields);
-    // user's existing role and email - dont update - keep it same
-    user.role = existingRole;
-    user.email = existingEmail;
-
-    if (files.photo) {
-      if (files.photo.size > 10000000) {
-        return res.status(400).json({
-          error: "Image should be smaller than 1Mb",
-        });
-      }
-      console.log("files.photo:", files.photo);
-      user.photo.data = fs.readFileSync(files.photo.filepath);
-      user.photo.contentType = files.photo.type;
-    }
-    const savedUser = await user.save();
-    savedUser.hashed_password = undefined;
-    savedUser.salt = undefined;
-    savedUser.photo = undefined;
-    res.json(savedUser);
   } catch (err) {
-    console.log("Update error:", err);
-    res.status(400).json({
+    console.log("profile udpate error", err);
+    return res.status(400).json({
       error: errorHandler(err),
     });
   }
