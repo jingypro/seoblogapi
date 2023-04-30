@@ -4,8 +4,8 @@ const {
   requireSignin,
   authMiddleware,
   // adminMiddleware,
-} = require("../contollers/auth");
-const { read, publicProfile, update, photo } = require("../contollers/user");
+} = require("../controllers/auth");
+const { read, publicProfile, update, photo } = require("../controllers/user");
 
 router.get("/user/profile", requireSignin, authMiddleware, read);
 router.get("/user/:username", publicProfile);

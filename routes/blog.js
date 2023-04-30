@@ -5,7 +5,7 @@ const {
   adminMiddleware,
   authMiddleware,
   canUpdateDeleteBlog,
-} = require("../contollers/auth");
+} = require("../controllers/auth");
 const {
   create,
   list,
@@ -17,7 +17,7 @@ const {
   listRelated,
   listSearch,
   listByUser,
-} = require("../contollers/blog");
+} = require("../controllers/blog");
 
 router.post("/blog", requireSignin, adminMiddleware, create);
 router.get("/blogs", list);

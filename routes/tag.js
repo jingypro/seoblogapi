@@ -1,10 +1,10 @@
 const express = require("express");
 const router = express.Router();
-const { create, list, read, remove } = require("../contollers/tag");
+const { create, list, read, remove } = require("../controllers/tag");
 // validators
 const { runValidation } = require("../validators");
 const { tagCreateValidator } = require("../validators/tag");
-const { requireSignin, adminMiddleware } = require("../contollers/auth");
+const { requireSignin, adminMiddleware } = require("../controllers/auth");
 
 router.post(
   "/tag",
